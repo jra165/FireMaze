@@ -1,6 +1,13 @@
-#Name: Joshua Atienza, Janet Zhang
-#NetID: jra165, jrz42
-#Project 1: Maze on Fire
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Feb 17 11:54:32 2021
+
+@author: Joshua Atienza, Janet Zhang
+@net-id: jra165, jrz42
+@project: Maze on Fire
+"""
+
 
 #Question 1 - Generate maze
 #import sys
