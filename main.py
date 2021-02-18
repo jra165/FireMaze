@@ -8,14 +8,16 @@ Created on Wed Feb 17 11:54:32 2021
 @project: Maze on Fire
 """
 
+#Imports
+#import sys
+import numpy as np
+from matplotlib import pyplot as plt
+import heapq as pq
 
 """
 Problem 1: Write an algorithm for generating a maze with a given dimension 
 and obstacle density p.
 """
-#import sys
-import numpy as np
-from matplotlib import pyplot as plt
 
 def generate_maze(dim, p):
     
@@ -47,6 +49,9 @@ Problem 2: Implement DFS between any 2 points
 """
 def DFS(maze, start, target):
     
+    #List of cell's valid neighbors
+    neighbors = []
+    
     #Possible movements in the maze
     directions = [[0,1], [0,-1], [1,0], [-1,0]]
     
@@ -66,8 +71,7 @@ def DFS(maze, start, target):
         #Path is possible if coordinates of current match target
         if (cur[0] ==target[0] and cur[1] == target[1]):
             return True
-        
-        neighbors = []
+    
         
         #Check all four directions
         for i in range(len(directions)):
@@ -102,10 +106,12 @@ def probability_plot():
     
     path_count = 0
     
+    #Create list of probabilities, incrementing by 0.1
     for i in range(10):
         obstacle_probs.append(prob)
         prob += 0.1
     
+    #Loop through each obstacle density
     for i in range(len(obstacle_probs)):
         
         #Repeat 40 times for each probability
@@ -158,12 +164,162 @@ or our target is reached.
 """Problem 3: Implement BFS, A* to determine shortest path
 """
 
-def BFS(maze, start, goal):
-    return False
+def BFS(maze, start, target):
+    
+    #Possible movements in the maze
+    directions = [[0,1], [0,-1], [1,0], [-1,0]]
+    
+    #Initialize queue
+    fringe = [start]
+    visited = set([])
+    
+    parent_map = [[(0,0) for i in range(len(maze))] for i in range(len(maze))]
+    parent_fringe = [(-1,-1)]
+    
+    #Search until the goal is reached
+    while(len(fringe) > 0):
+        
+        cur = fringe[0]
+        fringe.pop(0)
+        
+        #Pop from top of parent stack
+        cur_parent = parent_fringe[0]
+        parent_fringe.pop(0)
+        
+        #Check if node has been visited to remove redundancy
+        if(cur in visited): 
+            continue
+        
+        #Mark node as visited, update in parent_map
+        parent_map[cur[0]][cur[1]] = cur_parent
+        
+        #Check if node is the goal
+        if (cur[0] == target[0] and cur[1] == target[1]):
+            print("Goal found! Breaking.")
+            break
+        
+        #Expand cur and validate neighbors/parents, will use when checking all 4 directions
+        neighbors = []
+        parents = []
+        
+        #Check all 4 directions
+        for i in range(len(directions)):
+            
+            a = cur[0] + directions[i][0]
+            b = cur[1] + directions[i][1]
+            
+            #Not blocked and valid
+            if(a < 0 or b < 0 or a >= len(maze[0]) or b >= len(maze)
+               or maze[a][b] == 1 or (a,b) in visited):
+               continue
+           
+            #Add to valid neighbors
+            neighbors.append((a,b))
+            parents.append(cur)
+        
+        #Update fringes
+        fringe += neighbors
+        parent_fringe += parents
+        visited.add(cur)
+       
+    #Plot the path
+    path = []
+    node = target
+    
+    #No possible path
+    if (parent_map[node[0]][node[1]]==(0,0)):
+        return 0, len(visited)
+
+    #Create path
+    while True: 
+        path.append(node)
+        node = parent_map[node[0]][node[1]]
+        if node[0] == -1:
+            break
+  
+    #Return shortest path and number of visited nodes
+    path = path[::-1]
+    return path, len(visited)
 
 
-def A_Star(maze, start, goal):
-    return False
+
+
+#Implement A* on the maze
+def a_Star(maze, start, target):
+    
+    euc_dist = (np.abs(target[1]-start[1])**2 + (np.abs(target[0]-start[0])**2))**1/2
+
+
+
+#Plot density against BFS-A* node count against each other
+def plot_BFS_ASTAR():
+    
+    prob = 0
+    total = 0
+    obstacle_probs = []
+    node_count = []
+
+    
+    #Create list of obstacle densities, incrementing by 0.1
+    for i in range(10):
+        obstacle_probs.append(prob)
+        prob += 0.1
+    
+    #Loop through each obstacle density
+    for i in range(len(obstacle_probs)):
+        
+        #Repeat 40 times for each probability
+        for j in range(40):
+            
+            maze = generate_maze(100, obstacle_probs[i])
+            
+            #Subtract nodes: BFS - A*
+            difference = BFS((0,0), (len(maze)-1,len(maze)-1))[1] - a_Star((0,0), (len(maze)-1, len(maze)-1))[1]
+            total += difference
+        
+        node_count.append(total / 40)
+        total = 0
+    
+    #Plot lists against each other
+    plt.plot(obstacle_probs, node_count)
+    plt.xlabel("Obstacle density p")
+    plt.ylabel("Average # nodes of BFS-A*")
+    
+    #Create a dictionary following format
+    #key = object density
+    #value = probability you can go from S to G successfully
+    res = {} 
+    for key in obstacle_probs: 
+        for value in node_count: 
+            res[key] = value 
+            node_count.remove(value) 
+            break 
+        
+    return res
+
+
+#Testing BFS
+maze = generate_maze(5, 0.3)
+print(maze)
+print(BFS(maze, (0,0), (4,4)))
+
+
+#Testing A* 
+
+
+#Run plot
+print(plot_BFS_ASTAR())
+
+
+"""
+Question 4: Dimensions for DFS, BFS, A*
+"""
+
+
+
+"""
+Question 5: Strategy 1, 2, 3
+"""
 
 
 
