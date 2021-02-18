@@ -13,6 +13,8 @@ Created on Wed Feb 17 11:54:32 2021
 import numpy as np
 from matplotlib import pyplot as plt
 import heapq as pq
+import math
+from copy import copy, deepcopy
 
 """
 Problem 1: Write an algorithm for generating a maze with a given dimension 
@@ -248,9 +250,11 @@ path exists, and not to look for the shortest path.
 In our case, we just want to keep going down possible path until an obstacle is hit 
 or our target is reached.
 """
-
-
-
+#Gets Euclidean distance
+def get_distance(start, target):
+    
+    euc_dist = math.sqrt((target[1]-start[1])**2+((target[0]-start[0])**2))
+    return euc_dist
 
 #Implement A* on the maze
 def a_Star(maze, start, target):
@@ -258,34 +262,33 @@ def a_Star(maze, start, target):
     #Possible movements in the maze
     directions = [[0,1], [0,-1], [1,0], [-1,0]]
 
-    #Calculate euclidean distance from start to target
-    euc_dist = (np.abs(target[1]-start[1])**2 + (np.abs(target[0]-start[0])**2))**1/2
-
     #Initialize closed list
-    closed_list = set({})
+    closed_list = set([])
 
     #Initialize open list and convert to heap to access smallest element
-    open_list = [(euc_dist, 0, euc_dist, start, (-1,-1))]
+    open_list = [(get_distance(start, target), 0, get_distance(start, target), start, (-1,-1))]
     pq.heapify(open_list)
  
     #Initialize parent queue
     parent_map = [[(0,0) for i in range(len(maze))] for i in range(len(maze))]
-    parent_fringe = [(-1,-1)]
 
     #Search until target is reached
-    while(len(open_list)>0):
+    while(len(open_list) > 0):
 
         #Initialize parameters
-        f,g,h,cur,par = pq.heappop(open_list)
-        parent_map[cur[0]][cur[1]]=par
-        valid_parents=[]
-        valid_neighbors=[]
+        f, g, h, cur, par = pq.heappop(open_list)
+        parent_map[cur[0]][cur[1]] = par
+        
+        #Expand cur and validate neihbors
+        valid_parents = []
+        valid_neighbors = []
 
         #If the target is reached, stop the search
         if(cur[0]==target[0] and cur[1] == target[1]):
+            print("Target reached.")
             break
         
-        #If the position is in the closed list, skip that position
+        #Check if node visited to avoid redundancy
         if cur in closed_list: 
             continue
         
@@ -293,22 +296,28 @@ def a_Star(maze, start, target):
         for i in range(len(directions)):
 
             #Use directions array to change the current position
-            x = cur[0] + directions[i][0]
-            y = cur[1] + directions[i][1]
+            a = cur[0] + directions[i][0]
+            b = cur[1] + directions[i][1]
 
-            #If the checked direction is an invalid move on the generated maze, skip that position
-            if((x,y) in closed_list or x >= len(maze) or y >= len(maze) or maze[x][y]==1 or x<0 or y<0):
+            #Check if valid
+            if(a >= len(maze) or b >= len(maze) or a < 0 or b < 0):
                 continue
+            if(maze[a][b]==1):
+                continue
+            
+            #Check if visited
+            if((a,b) in closed_list): 
+                continue
+            
 
             #Otherwise it is a valid move. Add the position and parent to the valid lists
             valid_parents.append(cur)
-            valid_neighbors.append((x,y))
+            valid_neighbors.append((a,b))
             
-            #Define euclidean distance formula for two points
-            euc_dist=(np.abs(target[1]-y)**2+(np.abs(target[0]-x)**2))**1/2
         
             #Push the new information to the heapified open list 
-            pq.heappush(open_list,(g+1+euc_dist,g+1,euc_dist,(x,y),cur))
+            pq.heappush(open_list,(g+1+get_distance((a,b), target),g+1,get_distance((a,b), target),(a,b),cur))
+            
         
         #Push the current information to the closed list
         closed_list.add(cur)
@@ -317,9 +326,10 @@ def a_Star(maze, start, target):
     path = []
     node = target
 
-    #Check if there was a path found at all
+    #Check if there was a path found at all, returns 0 to indicate no path
     if(parent_map[node[0]][node[1]] == (0,0)):
-        return 0, len(closed_list)
+        print("# of visited nodes: " + str(len(closed_list)))
+        return 0
     
     #If there was, populate the path list with the correct positions
     while True:
@@ -334,7 +344,9 @@ def a_Star(maze, start, target):
 
     #Return the found path
     path = path[::-1]
-    return path, len(closed_list)
+    print("# of visited nodes: " + str(len(closed_list)))
+    return path
+
 
 """
 If there is no path from S to G, then the average ‘number of nodes explored by BFS 
@@ -367,7 +379,7 @@ def plot_BFS_ASTAR():
             maze = generate_maze(100, obstacle_probs[i])
             
             #Subtract nodes: BFS - A*
-            difference = BFS((0,0), (len(maze)-1,len(maze)-1))[1] - a_Star((0,0), (len(maze)-1, len(maze)-1))[1]
+            difference = BFS(maze, (0,0), (len(maze)-1,len(maze)-1))[1] - a_Star(maze, (0,0), (len(maze)-1, len(maze)-1))[1]
             total += difference
         
         node_count.append(total / 40)
@@ -398,6 +410,13 @@ print(BFS(maze, (0,0), (4,4)))
 
 
 #Testing A* 
+m = [[0, 0, 0, 1, 0],
+    [1, 0, 0, 1, 1],
+    [0, 0, 0, 1, 0],
+    [1, 0, 0, 0, 0],
+    [0, 0, 1, 0, 0]
+    ]
+print(a_Star(m,(0,0),(4,4)))
 
 
 #Run plot
@@ -413,7 +432,66 @@ Question 4: Dimensions for DFS, BFS, A*
 """
 Question 5: Strategy 1, 2, 3
 """
+def advance_fire_one_step(maze, q):
+    
+    #Possible movements in the maze
+    directions = [[0,1], [0,-1], [1,0], [-1,0]]
+    
+    #Copy original maze
+    maze_copy = deepcopy(maze)
+    
+    #Loop through coordinates in maze
+    for x in range(len(maze)):
+        
+        for y in range(len(maze[x])):
+            
+            fire_count = 0
+            
+            if(maze[x][y] != 0):
+                continue
+            
+            for i in range(len(directions)):
+                
+                a = x + directions[i][0]
+                b = y + directions[i][1]
+                
+                if(a < 0 or b < 0 or a >= len(maze) or b >= len(maze)):
+                    continue
+                
+                if(maze[a][b] == -1):
+                    fire_count += 1
+            
+            prob = 1 - (1-q)**fire_count
+            if(np.random.random() <= prob):
+                print((a,b))
+                maze_copy[a][b] = -1
+    
+    return maze_copy
 
+#Testing A* 
+m = [[0, 0, 0, 1, 0],
+    [1, 0, 0, 1, 1],
+    [0, 0, 0, 1, 0],
+    [1, 0, -1, 0, 0],
+    [0, 0, 1, 0, 0]
+    ]
+
+print(advance_fire_one_step(m, 0.8))
+
+[[0, 0, 0, 1, 0], 
+ [1, 0, -1, 1, 1], 
+ [0, -1, 0, 1, 0], 
+ [1, 0, -1, 0, 0], 
+ [0, 0, 1, 0, 0]]
+
+[[0, 0, 0, 1, 0], 
+ [1, 0, 0, 1, 1], 
+ [0, -1, 0, -1, 0], 
+ [1, 0, -1, 0, 0], 
+ [0, 0, 1, 0, 0]]
+        
+            
+            
 
 
 
