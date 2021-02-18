@@ -225,7 +225,7 @@ def BFS(maze, start, target):
     #Plot the path
     path = []
     node = target
-    
+
     #No possible path
     if (parent_map[node[0]][node[1]]==(0,0)):
         return 0, len(visited)
@@ -241,15 +241,108 @@ def BFS(maze, start, target):
     path = path[::-1]
     return path, len(visited)
 
+    
+"""
+We would prefer DFS over BFS in this case because the objective is to determine if a 
+path exists, and not to look for the shortest path.
+In our case, we just want to keep going down possible path until an obstacle is hit 
+or our target is reached.
+"""
+
 
 
 
 #Implement A* on the maze
 def a_Star(maze, start, target):
-    
+
+    #Possible movements in the maze
+    directions = [[0,1], [0,-1], [1,0], [-1,0]]
+
+    #Calculate euclidean distance from start to target
     euc_dist = (np.abs(target[1]-start[1])**2 + (np.abs(target[0]-start[0])**2))**1/2
 
+    #Initialize closed list
+    closed_list = set({})
 
+    #Initialize open list and convert to heap to access smallest element
+    open_list = [(euc_dist, 0, euc_dist, start, (-1,-1))]
+    pq.heapify(open_list)
+ 
+    #Initialize parent queue
+    parent_map = [[(0,0) for i in range(len(maze))] for i in range(len(maze))]
+    parent_fringe = [(-1,-1)]
+
+    #Search until target is reached
+    while(len(open_list)>0):
+
+        #Initialize parameters
+        f,g,h,cur,par = pq.heappop(open_list)
+        parent_map[cur[0]][cur[1]]=par
+        valid_parents=[]
+        valid_neighbors=[]
+
+        #If the target is reached, stop the search
+        if(cur[0]==target[0] and cur[1] == target[1]):
+            break
+        
+        #If the position is in the closed list, skip that position
+        if cur in closed_list: 
+            continue
+        
+        #Check all four directions
+        for i in range(len(directions)):
+
+            #Use directions array to change the current position
+            x = cur[0] + directions[i][0]
+            y = cur[1] + directions[i][1]
+
+            #If the checked direction is an invalid move on the generated maze, skip that position
+            if((x,y) in closed_list or x >= len(maze) or y >= len(maze) or maze[x][y]==1 or x<0 or y<0):
+                continue
+
+            #Otherwise it is a valid move. Add the position and parent to the valid lists
+            valid_parents.append(cur)
+            valid_neighbors.append((x,y))
+            
+            #Define euclidean distance formula for two points
+            euc_dist=(np.abs(target[1]-y)**2+(np.abs(target[0]-x)**2))**1/2
+        
+            #Push the new information to the heapified open list 
+            pq.heappush(open_list,(g+1+euc_dist,g+1,euc_dist,(x,y),cur))
+        
+        #Push the current information to the closed list
+        closed_list.add(cur)
+
+    #Define the found path 
+    path = []
+    node = target
+
+    #Check if there was a path found at all
+    if(parent_map[node[0]][node[1]] == (0,0)):
+        return 0, len(closed_list)
+    
+    #If there was, populate the path list with the correct positions
+    while True:
+
+        #Start from the end of the path, tracing target up the parent map
+        path.append(node)
+        node = parent_map[node[0]][node[1]]
+        
+        #Once target reaches the beginning, the path is finished
+        if node[0] == -1:
+            break
+
+    #Return the found path
+    path = path[::-1]
+    return path, len(closed_list)
+
+"""
+If there is no path from S to G, then the average ‘number of nodes explored by BFS 
+- number of nodes explored by A∗’ would be zero, since they would need to check the
+same amount of nodes to come to that conclusion. The larger the ‘obstacle density p’
+the more likely the avg number of nodes would be large as well.  
+
+"""
 
 #Plot density against BFS-A* node count against each other
 def plot_BFS_ASTAR():
