@@ -246,10 +246,86 @@ def BFS(maze, start, target):
 
 #Implement A* on the maze
 def a_Star(maze, start, target):
-    
+
+    #Possible movements in the maze
+    directions = [[0,1], [0,-1], [1,0], [-1,0]]
+
+    #Define euclidean distance formula for two points
     euc_dist = (np.abs(target[1]-start[1])**2 + (np.abs(target[0]-start[0])**2))**1/2
 
+    #Initialize closed list
+    closed_list = set({})
 
+    #Initialize open list and convert to heap to access smallest element
+    open_list = [{euc_dist, 0, euc_dist, start, (-1,-1)}]
+    pq.heapify(open_list)
+ 
+    #Initialize parent queue
+    parent_map = [[(0,0) for i in range(len(maze))] for i in range(len(maze))]
+    parent_fringe = [(-1,-1)]
+
+    #Search until target is reached
+    while(len(open_list)>0):
+
+        #Initialize parameters
+        parent_map(cur[0])[cur[1]]=par
+        valid_parents=[]
+        valid_neighbors=[]
+        f,g,h,cur,par = pq.heappop(open_list)
+
+        #If the target is reached, stop the search
+        if(cur[0]==target[0] and cur[1] == target(1)):
+            break
+        
+        #If the position is in the closed list, skip that position
+        if cur in closed_list: 
+            continue
+        
+        #Check all four directions
+        for i in range[len(directions)]:
+
+            #Use directions array to change the current position
+            x = directions[i] + cur[0]
+            y = directions[i] + cur[1]
+
+            #If the checked direction is an invalid move on the generated maze, skip that position
+            if((x,y) is closed_list or x >= len(maze) or maze(x)(y)==1 or x<0 or y<9):
+                continue
+
+            #Otherwise it is a valid move. Add the position and parent to the valid lists
+            valid_parents.append(cur)
+            valid_neighbors.append((x,y))
+            
+            #Define euclidean distance formula for two points
+            euc_dist=(np.abs(target[1]-y)**2+(np.abs(target[0]-x)**2))**1/2
+        
+            #Push the new information to the heapified open list 
+            pq.heappush(open_list,(g+1+euc_dist,g+1,euc_dist,(x,y),cur))
+        
+        #Push the current information to the closed list
+        closed_list.add(cur)
+
+    #Define the found path 
+    path = []
+    
+    #Check if there was a path found at all
+    if(map[target[0]][target[1]]==(0,0)):
+        return 0, len(closed_list)
+    
+    #If there was, populate the path list with the correct positions
+    while True:
+
+        #Start from the end of the path, tracing target up the parent map
+        path.append(target)
+        target = parent_map[target[0]][target[1]]
+        
+        #Once target reaches the beginning, the path is finished
+        if target[0] == -1:
+            break
+
+    #Return the found path
+    path = path[::-1]
+    return path, len(closed_list)
 
 #Plot density against BFS-A* node count against each other
 def plot_BFS_ASTAR():
