@@ -14,17 +14,17 @@ import numpy as np
 from matplotlib import pyplot as plt
 import heapq as pq
 import math
-from copy import copy, deepcopy
+from copy import deepcopy
 
 """
 Problem 1: Write an algorithm for generating a maze with a given dimension 
 and obstacle density p.
 """
-
+#Function for generating our maze
 def generate_maze(dim, p):
     
-    #Initialize grid
-    maze = np.zeros((dim, dim))
+    #Initialize maze with all 0s
+    maze = [[0] * dim for i in range(dim)]
     
     #Loop through each cell
     for y in range(len(maze)):
@@ -34,12 +34,9 @@ def generate_maze(dim, p):
             #Disregard start and target cell
             if((y == 0 and x == 0) or (y == dim - 1 and x == dim - 1)):
                 continue
-            
-            #Generate random number between 1 and 10
-            rand = np.random.randint(1,10)
 
             #If random number falls within threshold, set cell as obstacle
-            if(rand <= p * 10):
+            if(np.random.random() <= p):
                 maze[x][y] = 1
 
     return maze
@@ -49,6 +46,7 @@ def generate_maze(dim, p):
 """
 Problem 2: Implement DFS between any 2 points
 """
+#Function for running DFS on maze
 def DFS(maze, start, target):
     
     #List of cell's valid neighbors
@@ -99,7 +97,7 @@ def DFS(maze, start, target):
     #No path possible
     return False
             
-#Plot probabilities against each other
+#Function for plotting probabilities against each other
 def probability_plot():
     
     prob = 0
@@ -144,9 +142,13 @@ def probability_plot():
         
     return res
 
+"""
+Testing for DFS and probability plot
+"""
+
 #Testing
 #Generate maze
-m = generate_maze(4, 0.4)
+m = generate_maze(4, 0.1)
 print(m)
 
 #Run DFS
@@ -165,7 +167,7 @@ or our target is reached.
 
 """Problem 3: Implement BFS, A* to determine shortest path
 """
-
+#Function for running BFS on maze
 def BFS(maze, start, target):
     
     #Possible movements in the maze
@@ -230,7 +232,8 @@ def BFS(maze, start, target):
 
     #No possible path
     if (parent_map[node[0]][node[1]]==(0,0)):
-        return 0, len(visited)
+        print("# of visited nodes: " + str(len(visited)))
+        return 0
 
     #Create path
     while True: 
@@ -241,7 +244,8 @@ def BFS(maze, start, target):
   
     #Return shortest path and number of visited nodes
     path = path[::-1]
-    return path, len(visited)
+    print("# of visited nodes: " + str(len(visited)))
+    return path
 
     
 """
@@ -250,13 +254,13 @@ path exists, and not to look for the shortest path.
 In our case, we just want to keep going down possible path until an obstacle is hit 
 or our target is reached.
 """
-#Gets Euclidean distance
+#Helper function for getting Euclidean distance
 def get_distance(start, target):
     
     euc_dist = math.sqrt((target[1]-start[1])**2+((target[0]-start[0])**2))
     return euc_dist
 
-#Implement A* on the maze
+#Function for running A* search on the maze
 def a_Star(maze, start, target):
 
     #Possible movements in the maze
@@ -356,7 +360,7 @@ the more likely the avg number of nodes would be large as well.
 
 """
 
-#Plot density against BFS-A* node count against each other
+#Function for plotting density against BFS-A* node count against each other
 def plot_BFS_ASTAR():
     
     prob = 0
@@ -403,6 +407,10 @@ def plot_BFS_ASTAR():
     return res
 
 
+"""
+Testing for BFS, A*, and plots
+"""
+
 #Testing BFS
 maze = generate_maze(5, 0.3)
 print(maze)
@@ -428,10 +436,10 @@ Question 4: Dimensions for DFS, BFS, A*
 """
 
 
-
 """
 Question 5: Strategy 1, 2, 3
 """
+#Function for advancing the fire one step
 def advance_fire_one_step(maze, q):
     
     #Possible movements in the maze
@@ -445,50 +453,124 @@ def advance_fire_one_step(maze, q):
         
         for y in range(len(maze[x])):
             
+            #Count number of neighbors of (x,y) in current maze that are on fire 
             fire_count = 0
             
+            #Disregard anything that's not a valid space
             if(maze[x][y] != 0):
                 continue
             
+            #Move all 4 directions
             for i in range(len(directions)):
                 
                 a = x + directions[i][0]
                 b = y + directions[i][1]
                 
+                #Check if valid
                 if(a < 0 or b < 0 or a >= len(maze) or b >= len(maze)):
                     continue
                 
+                #Increment fire counter
                 if(maze[a][b] == -1):
                     fire_count += 1
             
+            #Calculate probability of of step being on fire next step
             prob = 1 - (1-q)**fire_count
             if(np.random.random() <= prob):
-                print((a,b))
-                maze_copy[a][b] = -1
+                maze_copy[x][y] = -1
     
     return maze_copy
 
-#Testing A* 
+
+
+#Function for setting an initial, randomized step on fire
+def set_on_fire(maze):
+    
+    #Generate a random coordinate as long as chosen step is valid
+    while True:
+        x = np.random.randint(len(maze))
+        y = np.random.randint(len(maze))
+    
+        if maze[x][y] == 0:
+            
+            maze[x][y] = -1
+            break
+    
+    return maze
+
+
+"""
+Set maze on fire testing
+"""
+#Advance fire one step test case
 m = [[0, 0, 0, 1, 0],
+    [1, 0, 0, 1, 1],
+    [0, 0, 0, 1, 0],
+    [1, 0, 0, 0, 0],
+    [-1, 0, 1, 0, 0]
+    ]
+print(advance_fire_one_step(m, 0.8))
+
+maze = generate_maze(4, 0.4)
+#Print initial maze
+print(maze)
+#Print maze with 1 step on fire
+print(set_on_fire(maze))
+
+
+#Function for Strategy 1
+def strategy_1(maze):
+    
+    #Initialize start and end points
+    start = (0,0)
+    target = (len(maze)-1, len(maze)-1)
+    q = np.random.random()
+    
+    shortest_path = a_Star(maze, start, target)
+    
+    if shortest_path == 0:
+        print("No path exists.")
+        return 0, maze
+    
+    set_on_fire(maze)
+    
+    for i in range(len(shortest_path)):
+        
+        cur = shortest_path[i]
+        #2 represents a visited node along optimal path
+        maze[cur[0]][cur[1]] = 2
+        if(maze[cur[0]][cur[1]] == -1):
+            print("Agent burned!")
+            return -1, maze
+        
+        maze = advance_fire_one_step(maze, q)
+        print(maze)
+    
+    return 1, maze
+
+"""
+Strategy 1 Testing
+"""
+mz = [[0, 0, 0, 1, 0],
     [1, 0, 0, 1, 1],
     [0, 0, 0, 1, 0],
     [1, 0, -1, 0, 0],
     [0, 0, 1, 0, 0]
     ]
+print(mz)
 
-print(advance_fire_one_step(m, 0.8))
+print(strategy_1(mz))
+    
+    
+    
+    
+    
+    
+    
 
-[[0, 0, 0, 1, 0], 
- [1, 0, -1, 1, 1], 
- [0, -1, 0, 1, 0], 
- [1, 0, -1, 0, 0], 
- [0, 0, 1, 0, 0]]
+    
+    
 
-[[0, 0, 0, 1, 0], 
- [1, 0, 0, 1, 1], 
- [0, -1, 0, -1, 0], 
- [1, 0, -1, 0, 0], 
- [0, 0, 1, 0, 0]]
         
             
             
