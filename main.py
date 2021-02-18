@@ -225,7 +225,7 @@ def BFS(maze, start, target):
     #Plot the path
     path = []
     node = target
-    
+
     #No possible path
     if (parent_map[node[0]][node[1]]==(0,0)):
         return 0, len(visited)
@@ -241,6 +241,13 @@ def BFS(maze, start, target):
     path = path[::-1]
     return path, len(visited)
 
+    
+"""
+We would prefer DFS over BFS in this case because the objective is to determine if a 
+path exists, and not to look for the shortest path.
+In our case, we just want to keep going down possible path until an obstacle is hit 
+or our target is reached.
+"""
 
 
 
@@ -285,11 +292,12 @@ def a_Star(maze, start, target):
         for i in range[len(directions)]:
 
             #Use directions array to change the current position
-            x = directions[i] + cur[0]
-            y = directions[i] + cur[1]
+            x = cur[0] + directions[i][0]
+            y = cur[1] + directions[i][1]
 
             #If the checked direction is an invalid move on the generated maze, skip that position
-            if((x,y) is closed_list or x >= len(maze) or maze(x)(y)==1 or x<0 or y<9):
+            if((x,y) is closed_list 
+                or x >= len(maze) or maze(x)(y)==1 or x<0 or y<0):
                 continue
 
             #Otherwise it is a valid move. Add the position and parent to the valid lists
@@ -326,6 +334,14 @@ def a_Star(maze, start, target):
     #Return the found path
     path = path[::-1]
     return path, len(closed_list)
+
+"""
+If there is no path from S to G, then the average ‘number of nodes explored by BFS 
+- number of nodes explored by A∗’ would be zero, since they would need to check the
+same amount of nodes to come to that conclusion. The larger the ‘obstacle density p’
+the more likely the avg number of nodes would be large as well.  
+
+"""
 
 #Plot density against BFS-A* node count against each other
 def plot_BFS_ASTAR():
