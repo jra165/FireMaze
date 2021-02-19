@@ -186,7 +186,7 @@ def BFS(maze, start, target):
         cur = fringe[0]
         fringe.pop(0)
         
-        #Pop from top of parent stack
+        #Pop from top of parent 
         cur_parent = parent_fringe[0]
         parent_fringe.pop(0)
         
@@ -530,6 +530,8 @@ def strategy_1(maze, q):
     start = (0,0)
     target = (len(maze)-1, len(maze)-1)
     
+    set_on_fire(maze)
+
     shortest_path = a_Star(maze, start, target)
     
     if shortest_path == 0:
@@ -538,7 +540,6 @@ def strategy_1(maze, q):
         print(np.matrix(maze))
         return 0
     
-    set_on_fire(maze)
     print(np.matrix(maze))
 
     step_counter = 0
@@ -596,7 +597,7 @@ def strategy_2(maze, q):
     
     
     #Set initial fire to maze
-    set_on_fire(maze)
+    ###set_on_fire(maze)
     print("Initial maze: ")
     print(np.matrix(maze))
     
@@ -705,15 +706,14 @@ def get_fire_count(maze, current):
             fire_count += 1
             
     return fire_count
-        
-    
-
+           
 #Function for modified A*
 def modified_a_Star(maze, start, target):
     
     
     #Possible movements in the maze
-    directions = [[0,1], [0,-1], [1,0], [-1,0]]
+    directions = [[0,1], [0,-1], [1,0], [-1,0],
+                  [0,2], [0,-2], [2,0], [-2,0]]
 
     #Initialize closed list
     closed_list = set([])
@@ -773,7 +773,7 @@ def modified_a_Star(maze, start, target):
             
         
             #Push the new information to the heapified open list 
-            pq.heappush(open_list,(g+1+get_distance((a,b), target), g+1,get_distance((a,b), target), 
+            pq.heappush(open_list,(get_fire_count(maze , (a,b))+g+1+get_distance((a,b), target), g+1,get_distance((a,b), target), 
                                    get_fire_count(maze, (a,b)), (a,b), cur))
             
         
@@ -809,17 +809,19 @@ def modified_a_Star(maze, start, target):
 
 def strategy_3(maze, q):
     
+    #Initialize coordinates
     start = (0,0)
     target = (len(maze)-1, len(maze)-1)
     cur = start
     
     
     #Set initial fire to maze
-    set_on_fire(maze)
+    #set_on_fire(maze)
     print("Initial maze: ")
     print(np.matrix(maze))
-    
-    #If the start is set on fire, them agent immediately burns
+    print("")
+
+    #If the start is set on fire, then agent immediately burns
     if(maze[cur[0]][cur[1]] == -1):
         print("Agent burned!")
         print("Final maze: ")
@@ -827,7 +829,7 @@ def strategy_3(maze, q):
         return -1
     
     #Find initial shortest path from start
-    shortest_path = a_Star(maze, start, target)
+    shortest_path = modified_a_Star(maze, start, target)
     
     #No path is available, return 0
     if shortest_path == 0:
@@ -836,53 +838,89 @@ def strategy_3(maze, q):
         print(np.matrix(maze))
         return 0
 
+    #Take the first step 
+    #cur = shortest_path[1] 
+
     #Take next step along shortest path until target is reached, not possible, or burns
     while cur != target:
         
         print("Current shortest path is: ")
         print(shortest_path)
         
+        #Pretend to advance the fire TWICE (i.e. look into the future fire) and recalculate the path
+        maze_simulated = advance_fire_one_step(maze, q)
+        #maze_simulated = advance_fire_one_step(maze_simulated, q)
+        shortest_path_simulated = modified_a_Star(maze_simulated, cur, target)
+
+        #If a path found in the future, use that instead of the OG path
+        if(shortest_path_simulated != 0):
+            shortest_path = shortest_path_simulated
+
         if(shortest_path == 0):
+            """
+            #Pretend to advance the fire ONCE (i.e. look into the future fire) and recalculate the path
+            maze_simulated = advance_fire_one_step(maze, q)
+            shortest_path_simulated = modified_a_Star(maze_simulated, cur, target)
+
+            #If a path found in the future, use that instead of the OG path
+            if(shortest_path_simulated != 0):
+                shortest_path = shortest_path_simulated
+
+            if(shortest_path == 0):
+            """  
             print("No path exists!")
             print("Final maze: ")
             print(np.matrix(maze))
             return 0
-        
+
+        #Take the maze_simulated step on the OG maze if possible. If not, then the original path is the only option
         cur = shortest_path[1]
-        maze = advance_fire_one_step(maze, q)
-        print(np.matrix(maze))
         
+        #Actually advance the fire
+        maze = advance_fire_one_step(maze, q)
+
+        print("Maze Now. Current Coord: ")
+        print(str(shortest_path[0]))
+        print(np.matrix(maze))
+        print("")
+
+        #Check if burned
         if(maze[cur[0]][cur[1]] == -1):
             print("Agent burned!")
             print("Final maze: ")
             print(np.matrix(maze))
+            print("")
             return -1
-        
             
         shortest_path = a_Star(maze, cur, target)
-       
+
+        
+        
+
     print("Agent survived!")
     print("Final maze: ")
     print(np.matrix(maze))
+    print("")
     return 1
     
-    
-    
-    
-    
-    
+   
 """
 Testing for Strategy 3
 """
 
-mx = [[0, 0, 0, 1, 0],
-      [1, 0, 0, 1, 1],
-      [0, 0, 0, 1, 0],
-      [1, 0, 0, 0, 0],
-      [0, 0, 1, 0, 0]]  
+mx = [[0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [-1, 0, 0, 0, 0]]  
 
-#print(strategy_2(mx, 0.4))
-print(strategy_3(mx, 0.4))
+mx = generate_maze(10,0)
+
+print("\n")
+print("STRATEGY 2 RESULT:")
+print(strategy_2(mx, .5))
+print("STRATEGY 3 RESULT:")
+print(strategy_3(mx, .5))
 
     
     
