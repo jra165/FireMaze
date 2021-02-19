@@ -648,6 +648,9 @@ def strategy_2(maze, q):
     return 1
             
     
+"""
+Testing for strategy 2
+"""
 mx = [[0, 0, 0, 1, 0],
       [1, 0, 0, 1, 1],
       [0, 0, 0, 1, 0],
@@ -657,6 +660,229 @@ mx = [[0, 0, 0, 1, 0],
 a = generate_maze(20, 0)
 
 print(strategy_2(a, 0.8))
+
+
+# #Helper function for getting the closest fire
+# def get_closest_fire(start, maze):
+    
+#     min_dist = 99999999
+    
+#     for i in range(maze):
+        
+#         for j in range(maze[i]):
+            
+#             if(maze[i][j] == -1):
+                
+#                 dist = get_distance(start, maze[i][j])
+#                 min_dist = min(dist, min_dist)
+    
+#     return min_dist
+
+# #Helper function for getting Euclidean distance
+# def get_heuristic(start, target, q):
+    
+#     euc_dist = math.sqrt((target[1]-start[1])**2+((target[0]-start[0])**2))
+#     fire_weight = -q * get_closest_fire(start, maze)
+    
+#     heuristic = fire_weight + euc_dist
+#     return heuristic
+
+def get_fire_count(maze, current):
+    
+    directions = [[0,1], [0,-1], [1,0], [-1,0],
+                  [0,2], [0,-2], [2,0], [-2,0]]
+    fire_count = 0
+    
+    for i in range(len(directions)):
+        
+        a = current[0] + directions[i][0]
+        b = current[1] + directions[i][1]
+        
+        #Check if valid
+        if(a >= len(maze) or b >= len(maze) or a < 0 or b < 0):
+            continue
+        if(maze[a][b] == -1):
+            fire_count += 1
+            
+    return fire_count
+        
+    
+
+#Function for modified A*
+def modified_a_Star(maze, start, target):
+    
+    
+    #Possible movements in the maze
+    directions = [[0,1], [0,-1], [1,0], [-1,0]]
+
+    #Initialize closed list
+    closed_list = set([])
+
+    #Initialize open list and convert to heap to access smallest element
+    open_list = [(get_distance(start, target), 0, get_distance(start, target), get_fire_count(maze, start), start, (-1,-1))]
+    pq.heapify(open_list)
+ 
+    #Initialize parent queue
+    parent_map = [[(0,0) for i in range(len(maze))] for i in range(len(maze))]
+
+    #Search until target is reached
+    while(len(open_list) > 0):
+
+        #Initialize parameters
+        f, g, h, fire_count, cur, par = pq.heappop(open_list)
+        parent_map[cur[0]][cur[1]] = par
+        
+        #Expand cur and validate neighbors
+        valid_parents = []
+        valid_neighbors = []
+
+        #If the target is reached, stop the search
+        if(cur[0]==target[0] and cur[1] == target[1]):
+            #print("Target reached.")
+            break
+        
+        #Check if node visited to avoid redundancy
+        if cur in closed_list: 
+            continue
+        
+        #Check all four directions
+        for i in range(len(directions)):
+
+            #Use directions array to change the current position
+            a = cur[0] + directions[i][0]
+            b = cur[1] + directions[i][1]
+
+            #Check if valid
+            if(a >= len(maze) or b >= len(maze) or a < 0 or b < 0):
+                continue
+            if(maze[a][b] == 1):
+                continue
+            
+            #Check if node on fire for strategy 2 implementation
+            if(maze[a][b] == -1):
+                continue
+            
+            #Check if visited
+            if((a,b) in closed_list): 
+                continue
+            
+
+            #Otherwise it is a valid move. Add the position and parent to the valid lists
+            valid_parents.append(cur)
+            valid_neighbors.append((a,b))
+            
+        
+            #Push the new information to the heapified open list 
+            pq.heappush(open_list,(g+1+get_distance((a,b), target), g+1,get_distance((a,b), target), 
+                                   get_fire_count(maze, (a,b)), (a,b), cur))
+            
+        
+        #Push the current information to the closed list
+        closed_list.add(cur)
+
+    #Define the found path 
+    path = []
+    node = target
+
+    #Check if there was a path found at all, returns 0 to indicate no path
+    if(parent_map[node[0]][node[1]] == (0,0)):
+        #print("# of visited nodes: " + str(len(closed_list)))
+        print("No path found.")
+        return 0
+    
+    #If there was, populate the path list with the correct positions
+    while True:
+
+        #Start from the end of the path, tracing target up the parent map
+        path.append(node)
+        node = parent_map[node[0]][node[1]]
+        
+        #Once target reaches the beginning, the path is finished
+        if node[0] == -1:
+            break
+
+    #Return the found path
+    path = path[::-1]
+    #print("# of visited nodes: " + str(len(closed_list)))
+    return path
+    
+
+def strategy_3(maze, q):
+    
+    start = (0,0)
+    target = (len(maze)-1, len(maze)-1)
+    cur = start
+    
+    
+    #Set initial fire to maze
+    set_on_fire(maze)
+    print("Initial maze: ")
+    print(np.matrix(maze))
+    
+    #If the start is set on fire, them agent immediately burns
+    if(maze[cur[0]][cur[1]] == -1):
+        print("Agent burned!")
+        print("Final maze: ")
+        print(np.matrix(maze))
+        return -1
+    
+    #Find initial shortest path from start
+    shortest_path = a_Star(maze, start, target)
+    
+    #No path is available, return 0
+    if shortest_path == 0:
+        print("No path exists.")
+        print("Final maze: ")
+        print(np.matrix(maze))
+        return 0
+
+    #Take next step along shortest path until target is reached, not possible, or burns
+    while cur != target:
+        
+        print("Current shortest path is: ")
+        print(shortest_path)
+        
+        if(shortest_path == 0):
+            print("No path exists!")
+            print("Final maze: ")
+            print(np.matrix(maze))
+            return 0
+        
+        cur = shortest_path[1]
+        maze = advance_fire_one_step(maze, q)
+        print(np.matrix(maze))
+        
+        if(maze[cur[0]][cur[1]] == -1):
+            print("Agent burned!")
+            print("Final maze: ")
+            print(np.matrix(maze))
+            return -1
+        
+            
+        shortest_path = a_Star(maze, cur, target)
+       
+    print("Agent survived!")
+    print("Final maze: ")
+    print(np.matrix(maze))
+    return 1
+    
+    
+    
+    
+    
+    
+"""
+Testing for Strategy 3
+"""
+
+mx = [[0, 0, 0, 1, 0],
+      [1, 0, 0, 1, 1],
+      [0, 0, 0, 1, 0],
+      [1, 0, 0, 0, 0],
+      [0, 0, 1, 0, 0]]  
+
+#print(strategy_2(mx, 0.4))
+print(strategy_3(mx, 0.4))
 
     
     
