@@ -289,7 +289,7 @@ def a_Star(maze, start, target):
 
         #If the target is reached, stop the search
         if(cur[0]==target[0] and cur[1] == target[1]):
-            print("Target reached.")
+            #print("Target reached.")
             break
         
         #Check if node visited to avoid redundancy
@@ -306,7 +306,11 @@ def a_Star(maze, start, target):
             #Check if valid
             if(a >= len(maze) or b >= len(maze) or a < 0 or b < 0):
                 continue
-            if(maze[a][b]==1):
+            if(maze[a][b] == 1):
+                continue
+            
+            #Check if node on fire for strategy 2 implementation
+            if(maze[a][b] == -1):
                 continue
             
             #Check if visited
@@ -332,7 +336,8 @@ def a_Star(maze, start, target):
 
     #Check if there was a path found at all, returns 0 to indicate no path
     if(parent_map[node[0]][node[1]] == (0,0)):
-        print("# of visited nodes: " + str(len(closed_list)))
+        #print("# of visited nodes: " + str(len(closed_list)))
+        print("No path found.")
         return 0
     
     #If there was, populate the path list with the correct positions
@@ -348,7 +353,7 @@ def a_Star(maze, start, target):
 
     #Return the found path
     path = path[::-1]
-    print("# of visited nodes: " + str(len(closed_list)))
+    #print("# of visited nodes: " + str(len(closed_list)))
     return path
 
 
@@ -519,34 +524,47 @@ print(set_on_fire(maze))
 
 
 #Function for Strategy 1
-def strategy_1(maze):
+def strategy_1(maze, q):
     
     #Initialize start and end points
     start = (0,0)
     target = (len(maze)-1, len(maze)-1)
-    q = np.random.random()
     
     shortest_path = a_Star(maze, start, target)
     
     if shortest_path == 0:
         print("No path exists.")
-        return 0, maze
+        print("Final maze: ")
+        print(np.matrix(maze))
+        return 0
     
     set_on_fire(maze)
-    
+    print(np.matrix(maze))
+
+    step_counter = 0
     for i in range(len(shortest_path)):
         
+        
         cur = shortest_path[i]
-        #2 represents a visited node along optimal path
-        maze[cur[0]][cur[1]] = 2
+        
+        step_counter += 1
+        
         if(maze[cur[0]][cur[1]] == -1):
             print("Agent burned!")
-            return -1, maze
+            print("Agent visited " + str(step_counter) + " nodes before catching on fire.")
+            print("Final maze: ")
+            print(np.matrix(maze))
+            return -1
         
         maze = advance_fire_one_step(maze, q)
-        print(maze)
+        print(np.matrix(maze))
     
-    return 1, maze
+    print("Agent survived!")
+    print("Agent visited " + str(step_counter) + " nodes.")
+    print("Final maze: ")
+    print(np.matrix(maze))
+    print(shortest_path)
+    return 1
 
 """
 Strategy 1 Testing
@@ -554,16 +572,92 @@ Strategy 1 Testing
 mz = [[0, 0, 0, 1, 0],
     [1, 0, 0, 1, 1],
     [0, 0, 0, 1, 0],
-    [1, 0, -1, 0, 0],
+    [1, 0, 0, 0, 0],
     [0, 0, 1, 0, 0]
     ]
-print(mz)
+a = [[0, 0, 0, 1, 0],
+    [1, 0, 0, 1, 1],
+    [0, 0, 0, 1, 0],
+    [1, 0, 0, 0, 0],
+    [0, 0, 1, 0, 0]
+    ]
+print(np.matrix(mz))
+print(a_Star(a, (0,0), (4,4)))
+print(strategy_1(mz, 0.4))
+    
+    
+    
+    
+def strategy_2(maze, q):
+    
+    start = (0,0)
+    target = (len(maze)-1, len(maze)-1)
+    cur = start
+    
+    
+    #Set initial fire to maze
+    set_on_fire(maze)
+    print("Initial maze: ")
+    print(np.matrix(maze))
+    
+    #If the start is set on fire, them agent immediately burns
+    if(maze[cur[0]][cur[1]] == -1):
+        print("Agent burned!")
+        print("Final maze: ")
+        print(np.matrix(maze))
+        return -1
+    
+    #Find initial shortest path from start
+    shortest_path = a_Star(maze, start, target)
+    
+    #No path is available, return 0
+    if shortest_path == 0:
+        print("No path exists.")
+        print("Final maze: ")
+        print(np.matrix(maze))
+        return 0
 
-print(strategy_1(mz))
+    #Take next step along shortest path until target is reached, not possible, or burns
+    while cur != target:
+        
+        print("Current shortest path is: ")
+        print(shortest_path)
+        
+        if(shortest_path == 0):
+            print("No path exists!")
+            print("Final maze: ")
+            print(np.matrix(maze))
+            return 0
+        
+        cur = shortest_path[1]
+        maze = advance_fire_one_step(maze, q)
+        print(np.matrix(maze))
+        
+        if(maze[cur[0]][cur[1]] == -1):
+            print("Agent burned!")
+            print("Final maze: ")
+            print(np.matrix(maze))
+            return -1
+        
+            
+        shortest_path = a_Star(maze, cur, target)
+       
+    print("Agent survived!")
+    print("Final maze: ")
+    print(np.matrix(maze))
+    return 1
+            
     
-    
-    
-    
+mx = [[0, 0, 0, 1, 0],
+      [1, 0, 0, 1, 1],
+      [0, 0, 0, 1, 0],
+      [1, 0, 0, 0, 0],
+      [0, 0, 1, 0, 0]]  
+
+a = generate_maze(20, 0)
+
+print(strategy_2(a, 0.8))
+
     
     
     
