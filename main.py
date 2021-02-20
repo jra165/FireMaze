@@ -265,7 +265,7 @@ def get_distance(start, target):
 def a_Star(maze, start, target):
 
     #Possible movements in the maze
-    directions = [[0,1], [0,-1], [1,0], [-1,0]]
+        directions = [[0,1], [0,-1], [1,0], [-1,0]]
 
     #Initialize closed list
     closed_list = set([])
@@ -280,13 +280,9 @@ def a_Star(maze, start, target):
     #Search until no more options to explore or target is reached
     while(len(open_list) > 0):
 
-        #Initialize parameters
+        #Update information
         f, g, h, cur, par = pq.heappop(open_list)
         parent_map[cur[0]][cur[1]] = par
-        
-        #Expand cur and validate neihbors
-        valid_parents = []
-        valid_neighbors = []
 
         #If the target is reached, stop the search
         if(cur[0]==target[0] and cur[1] == target[1]):
@@ -318,12 +314,6 @@ def a_Star(maze, start, target):
             if((a,b) in closed_list): 
                 continue
             
-
-            #Otherwise it is a valid move. Add the position and parent to the valid lists
-            valid_parents.append(cur)
-            valid_neighbors.append((a,b))
-            
-        
             #Push the new information to the open list 
             pq.heappush(open_list,(g+1+get_distance((a,b), target),g+1,get_distance((a,b), target),(a,b),cur))
             
@@ -735,10 +725,6 @@ def modified_a_Star(maze, start, target):
         #Initialize parameters
         f, g, h, fire_count, cur, par = pq.heappop(open_list)
         parent_map[cur[0]][cur[1]] = par
-        
-        #Expand cur and validate neighbors
-        valid_parents = []
-        valid_neighbors = []
 
         #If the target is reached, stop the search
         if(cur[0]==target[0] and cur[1] == target[1]):
@@ -770,12 +756,6 @@ def modified_a_Star(maze, start, target):
             if((a,b) in closed_list): 
                 continue
             
-
-            #Otherwise it is a valid move. Add the position and parent to the valid lists
-            valid_parents.append(cur)
-            valid_neighbors.append((a,b))
-            
-        
             #Push the new information to the heapified open list 
             pq.heappush(open_list,(get_fire_count(maze , (a,b))+g+1+get_distance((a,b), target), g+1,get_distance((a,b), target), 
                                    get_fire_count(maze, (a,b)), (a,b), cur))
