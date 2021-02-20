@@ -265,7 +265,7 @@ def get_distance(start, target):
 def a_Star(maze, start, target):
 
     #Possible movements in the maze
-        directions = [[0,1], [0,-1], [1,0], [-1,0]]
+    directions = [[0,1], [0,-1], [1,0], [-1,0]]
 
     #Initialize closed list
     closed_list = set([])
@@ -685,6 +685,7 @@ print(strategy_2(a, 0.8))
 def get_fire_count(maze, current):
     
     directions = [[0,1], [0,-1], [1,0], [-1,0],
+                  [1,1], [-1,-1], [1,-1], [-1,1],
                   [0,2], [0,-2], [2,0], [-2,0]]
     fire_count = 0
     
@@ -706,8 +707,7 @@ def modified_a_Star(maze, start, target):
     
     
     #Possible movements in the maze
-    directions = [[0,1], [0,-1], [1,0], [-1,0],
-                  [0,2], [0,-2], [2,0], [-2,0]]
+    directions = [[0,1], [0,-1], [1,0], [-1,0]]
 
     #Initialize closed list
     closed_list = set([])
